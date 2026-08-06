@@ -7,6 +7,7 @@
 | Skill | 用途 |
 |---|---|
 | [github-prior-art](skills/github-prior-art/SKILL.md) | 規劃新功能或架構前，先到 GitHub 做開源先例調查，產出調查報告再進入規劃 |
+| [format-preserving-edits](skills/format-preserving-edits/SKILL.md) | 修改既有設定檔/資料檔時保留原排版，用文字層級外科手術讓 diff 只剩真正的異動 |
 
 ## 安裝
 
