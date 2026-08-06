@@ -12,8 +12,12 @@
 ## 安裝
 
 ```bash
-# 互動式選擇要安裝到哪些 agent
+# 互動式選擇要安裝的 skill 與 agent
+npx skills add nickolaslin33/agent-skills
+
+# 或指定單一 skill
 npx skills add nickolaslin33/agent-skills@github-prior-art
+npx skills add nickolaslin33/agent-skills@format-preserving-edits
 
 # 更新
 npx skills update
