@@ -79,6 +79,9 @@ HIDDEN_SECTIONS = (SECTION_MISREMEMBERED,)
 LABEL_LAST = "上次叫它做什麼、做到哪裡"
 LABEL_DECISION = "上次的決定"
 LABEL_WARNING = "警告"
+# 待確認跟理解債不一樣：理解債是「以為自己懂但沒懂」，靠校驗者問機制問題還；
+# 待確認是「知道自己不知道」，靠去查或問人還。兩者還法不同，所以不共用 debt.md。
+LABEL_QUESTIONS = "待確認"
 
 # SPEC §5.2 的成立條件換算成數字。
 #
@@ -230,6 +233,15 @@ def debt_block(debts: list[str]) -> list[str]:
     return [clip(head, SCREEN_COLS), *body([f"- {q}" for q in debts[:MAX_DEBT_SHOWN]])]
 
 
+def question_block(questions: list[str]) -> list[str]:
+    """待確認段落。跟欠債不同，沒有的時候整段不印——欠債是這套機制的核心指標，
+    零筆本身有意義；待確認是附帶的，永遠留一個空欄位會退化成每次略過的噪音。"""
+    head = f"{LABEL_QUESTIONS} {len(questions)}"
+    if len(questions) > MAX_DEBT_SHOWN:
+        head += f"（只列 {MAX_DEBT_SHOWN} 條，其餘看 open-questions.md）"
+    return [clip(head, SCREEN_COLS), *body([f"- {q}" for q in questions[:MAX_DEBT_SHOWN]])]
+
+
 def render(project: str, root: Path, now: datetime) -> list[str]:
     project_dir = root / project
     handoff_path = project_dir / "handoff.md"
@@ -245,6 +257,7 @@ def render(project: str, root: Path, now: datetime) -> list[str]:
     artifacts = artifacts_line(project_dir / "artifacts.md")
     decision = latest_decision(project_dir)
     debts = open_debts(read_text(project_dir / "debt.md"))
+    questions = open_debts(read_text(project_dir / "open-questions.md"))
     touched_at = resolve_touched_at(handoff_path, text)
 
     # 檔案讀得到卻問不到時間（沒有 updated，stat 又失敗）就照實說不知道，不要瞎猜一個
@@ -260,6 +273,8 @@ def render(project: str, root: Path, now: datetime) -> list[str]:
     if decision:
         out += [LABEL_DECISION, *body([decision]), ""]
     out += [*debt_block(debts), ""]
+    if questions:
+        out += [*question_block(questions), ""]
     out += [SECTION_NEXT, *body([nxt or MISSING]), ""]
     out.append(PROMPT)
     return out

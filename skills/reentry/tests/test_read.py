@@ -79,7 +79,7 @@ def decision(text="就這樣決定了。", date="2026-08-12", extra=""):
     return f"---\nproject: X\ndate: {date}\npromoted: false\n---\n\n## 決定\n{text}\n{extra}"
 
 
-def write_project(root: Path, name="P", *, handoff_text=None, artifacts_text=None, decisions=None, debt=None):
+def write_project(root: Path, name="P", *, handoff_text=None, artifacts_text=None, decisions=None, debt=None, questions=None):
     """在暫存根目錄造一個專案。fixture 一律不動，邊界狀況都造在這裡。"""
     folder = root / name
     folder.mkdir(parents=True, exist_ok=True)
@@ -88,6 +88,8 @@ def write_project(root: Path, name="P", *, handoff_text=None, artifacts_text=Non
         (folder / "artifacts.md").write_text(artifacts_text, encoding="utf-8")
     if debt is not None:
         (folder / "debt.md").write_text(debt, encoding="utf-8")
+    if questions is not None:
+        (folder / "open-questions.md").write_text(questions, encoding="utf-8")
     for filename, text in (decisions or {}).items():
         (folder / "decisions").mkdir(exist_ok=True)
         (folder / "decisions" / filename).write_text(text, encoding="utf-8")
@@ -693,3 +695,37 @@ class TestFixtureUntouched(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
+
+
+class TestOpenQuestions(unittest.TestCase):
+    """待確認跟欠債分開，而且沒有未打勾的就整段不印。"""
+
+    def test_shows_only_unchecked(self):
+        out = run("orders-api").stdout
+        self.assertIn("待確認 1", out)
+        self.assertIn("tuning 跟 limits", out)
+        self.assertNotIn("schema_migration 的版本欄位", out)
+
+    def test_answer_line_never_leaks(self):
+        """待確認可以寫答案，但回來時不印——印出來就不用去查了。"""
+        self.assertNotIn("跟檔名前綴一致", run("orders-api").stdout)
+
+    def test_absent_file_means_no_block(self):
+        """沒有 open-questions.md 就整段不出現，不留空殼。"""
+        self.assertNotIn("待確認", run("storefront-web").stdout)
+
+    def test_all_checked_also_means_no_block(self):
+        """全部打勾等於沒有待確認，一樣不印。"""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_project(root, "Q", questions="# 待確認 — Q\n\n- [x] 已經查到了\n")
+            self.assertNotIn("待確認", run("Q", root=root).stdout)
+
+    def test_debt_comes_before_questions(self):
+        out = run("orders-api").stdout
+        self.assertLess(out.index("欠債"), out.index("待確認"))
+
+    def test_questions_come_before_next_step(self):
+        """待確認插在欠債與下一步之間，不能把下一步擠到前面。"""
+        out = run("orders-api").stdout
+        self.assertLess(out.index("待確認"), out.rindex("下一步"))
