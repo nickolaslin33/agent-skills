@@ -1,0 +1,29 @@
+{
+  "skill_name": "clear-technical-chinese",
+  "evals": [
+    {
+      "id": 0,
+      "name": "write-readme-section",
+      "mode": "技術文件模式",
+      "prompt": "幫我寫 quote-tui 這個專案 README 的「開發環境設定」那一段。專案是 Python 3.11 + Textual，用 pip install -e \".[dev]\" 安裝，測試跑 pytest，pyproject.toml 裡 asyncio_mode 設成 auto 所以 async 測試不用加 decorator。entry point 是 quote-tui，但還沒實作完，現在跑會失敗。目前還沒建虛擬環境。",
+      "expected_output": "一段 README 的 Markdown。規則要能直接執行（指令完整可複製），因果寫清楚（為什麼 async 測試不用加 decorator、entry point 為什麼會失敗），技術詞如 entry point / decorator / asyncio_mode 保留原文，不用工程師黑話。",
+      "files": []
+    },
+    {
+      "id": 1,
+      "name": "progress-report",
+      "mode": "日常回覆模式",
+      "prompt": "你剛剛幫我改完一件事：把 orders-api 裡 price-lookup 的記憶體快取換成 Redis，動了 3 個檔案，跑 vitest 全部通過，但有一個測試因為連不到本機 Redis 被 skip 掉。現在用中文跟我回報這件事。",
+      "expected_output": "一段簡短的口語回報。應該三到五句話講完，點出「被 skip 的那個測試」這個需要注意的地方，不寫成正式文件的口氣，不用黑話（沒破、炸掉、卡死），不重複使用者已經知道的背景。",
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "polish-bad-doc",
+      "mode": "技術文件模式",
+      "prompt": "幫我潤飾這段設計文件，我自己寫的看起來很像內部筆記：\n\n## 重試機制\n\n這個 handler 是被設計來處理上游 timeout 的。基於這個原因，我們決定在 adapter 層加一個 retry。如果上游炸掉，retry 三次都撈不到就直接讓它掛掉，不要卡死後面的流程。這邊要注意的是這個 retry 不能寄生在既有的 error handler 裡面，不然 schema 契約會出問題。重試不是容錯，是給上游一個機會。確保你在改之前有先跑過測試。",
+      "expected_output": "潤飾後的 Markdown。要修掉四類問題：英文直譯（是被設計來／基於這個原因／確保你）、工程師黑話（炸掉／撈不到／掛掉／卡死／寄生）、punchline（「重試不是容錯，是給上游一個機會」）、模糊抽象詞（「schema 契約」要寫成具體規則）。同時保留 handler / adapter / retry / timeout / schema 等技術詞的原文。",
+      "files": []
+    }
+  ]
+}

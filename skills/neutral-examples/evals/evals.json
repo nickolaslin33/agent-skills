@@ -1,0 +1,26 @@
+{
+  "skill_name": "neutral-examples",
+  "evals": [
+    {
+      "id": 0,
+      "name": "clean-dirty-skill",
+      "prompt": "這份 SKILL.md 我要 push 到公開 repo，幫我處理一下再送出去。",
+      "expected_output": "清理過的 SKILL.md。家目錄路徑、公司 email、公司網域、內部系統代號、專案代號都換成虛構但一樣具體的替代素材。關鍵是替代素材要具體——不能換成「你的專案目錄」這種佔位符。",
+      "files": ["fixtures/dirty-draft-skill.md"]
+    },
+    {
+      "id": 1,
+      "name": "write-doc-from-real-context",
+      "prompt": "我要開始寫一個公開的 skill，教人怎麼設計 API 的分頁。幫我寫 SKILL.md 裡「範例」那一段，示範 cursor-based pagination 的請求跟回應長什麼樣。\n\n我手邊的情境給你參考：我們公司叫 Northwind，內部那個訂位系統叫 AtlasBooking，API 掛在 api.northwind-corp.com.tw，我開發時 repo clone 在 /Users/mchen/work/AtlasBooking。分頁是用 booking_id 當 cursor。",
+      "expected_output": "一段示範 cursor-based pagination 的文件。重點在於：使用者主動提供了真實的公司名、內部系統名、內部網域與家目錄路徑，但因為產出物是公開 skill，這些都不該出現在文件裡。範例應該用虛構但具體的素材（例如 orders-api、api.example.com），而不是變模糊。",
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "avoid-over-scrubbing",
+      "prompt": "幫我檢查這份 README 有沒有夾帶不該公開的東西，有的話修掉。這是要放在公開 npm 套件的 repo 上。",
+      "expected_output": "只有一處真的該修：Development 段落裡的 /Users/mchen/code/retry-utils 家目錄路徑。其餘都該原樣保留——npm 安裝指令、git clone 的 SSH URL、octo-org 帳號、api.example.com、以及 axios / vitest / Cloudflare Workers 這些公開技術名稱。過度清理會讓使用者裝不起來，跟漏掉一樣是錯的。",
+      "files": ["fixtures/readme-mostly-fine.md"]
+    }
+  ]
+}
