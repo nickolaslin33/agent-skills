@@ -1,9 +1,9 @@
 ---
-name: github-prior-art
+name: gh-shoulders
 description: Use when 規劃新功能、設計架構或技術選型，且需求含開源世界可能已有解法的通用成分；或被要求尋找類似開源專案、參考現有實作（找類似專案、參考開源作法、先例調查、prior art、find similar projects）。修 bug、小幅修改、純內部領域邏輯不適用。
 ---
 
-# github-prior-art — 開源先例調查
+# gh-shoulders — 站在開源巨hub的肩上
 
 ## 總覽
 
