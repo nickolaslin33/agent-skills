@@ -1,6 +1,6 @@
 ---
 name: format-preserving-edits
-description: 修改既有的 JSON / YAML / TOML / INI / XML / .env / CSV 等設定檔或資料檔時，先量出維護者原本的排版慣例（縮排、鍵序、空行分段、引號、冒號對齊、逗號位置），再用文字層級的外科手術做增刪改，讓 diff 只剩真正的異動、不夾帶任何重排。只要你正要在一份既有檔案裡新增一筆設定、刪掉一個 key、改一個參數、批次改多個 config、把大檔拆成小檔或搬設定，就用這個 skill——即使看起來只是改一行。特別是當你想呼叫 json.dump / yaml.dump / ConfigParser.write / xml pretty-print 或任何 parser round-trip 的時候：那些 API 會把整份檔案正規化，製造上千行假 diff、吃掉註解與鍵序，務必改用這裡的做法。觸發詞：「不要幫我排版」「維持原本的排版」「照原本的格式」「不要動格式」「diff 太亂」「只改該改的」「preserve formatting」「don't reformat」「keep the existing style」「minimal diff」，以及任何改設定檔 / 改 config / 加一筆資料的請求。
+description: 改既有的設定檔或資料檔時，只動你要動的那幾行，其餘排版原封不動，讓 diff 只剩真正的異動。適用 JSON / YAML / TOML / INI / XML / .env / CSV。只要你正要在既有檔案裡新增一筆設定、刪掉一個 key、改一個參數、批次改多個 config、把大檔拆成小檔或搬設定，就用這個 skill——即使看起來只是改一行。特別是當你想呼叫 json.dump / yaml.dump / ConfigParser.write / xml pretty-print 或任何 parser round-trip 的時候：那些 API 會把整份檔案正規化，製造上千行假 diff，還會吃掉註解與鍵序，務必改用這裡的做法。觸發詞：「不要幫我排版」「維持原本的排版」「照原本的格式」「不要動格式」「diff 太亂」「只改該改的」「preserve formatting」「don't reformat」「keep the existing style」「minimal diff」，以及任何改設定檔 / 改 config / 加一筆資料的請求。
 ---
 
 # Format-Preserving Edits
@@ -12,7 +12,7 @@ key 用什麼順序排，都是他們找東西的路標。
 
 一旦你把檔案 `json.load()` 進來再 `json.dump()` 出去，等於用序列化器的品味覆寫了
 維護者的品味。**語意可能一模一樣，但 diff 從「我改了 1 行」變成「我改了 5000 行」，
-review 的人只能盲簽。** 而且 round-trip 通常還會靜靜地弄丟東西：註解、鍵序、
+review 的人只能盲簽。** 而且 round-trip 經常無聲地改掉或刪掉內容：註解、鍵序、
 非 ASCII 的寫法、`1.0` vs `1`、大整數精度、重複 key。
 
 所以驗收標準有兩條，缺一不可：**語意對** ＋ **diff 形狀對**。
@@ -25,12 +25,12 @@ review 的人只能盲簽。** 而且 round-trip 通常還會靜靜地弄丟東�
 
 | 別用 | 為什麼 |
 |---|---|
-| `json.dump` / `json.dumps` 寫回既有檔 | 重排全檔、`ensure_ascii` 改掉中文寫法、`1.0`→`1.0`但整數格式可能變 |
+| `json.dump` / `json.dumps` 寫回既有檔 | 重排全檔、`ensure_ascii` 改掉中文的寫法、數字的表示法可能變（`1.0` 寫成 `1`、`1e3` 寫成 `1000.0`） |
 | `yaml.dump` / `yaml.safe_dump` | 吃掉全部註解、改引號、重排 key、把 `on/yes` 之類的值改型別 |
 | `ConfigParser.write()` | 吃掉註解、小寫化 key、統一 `=` 兩側空白 |
 | `ET.tostring` / `minidom.toprettyxml` | 重排縮排、改自閉合標籤寫法、動屬性順序 |
 | `prettier` / `black` / `gofmt` 掃過整個檔 | 除非這個 repo 本來就有這個 formatter 在 CI 跑 |
-| 「順手把這裡對齊一下」 | 你的 diff 從此不可 review |
+| 「順手把這裡對齊一下」 | 對齊的改動會跟你真正的修改混在同一份 diff 裡，review 的人分不出哪幾行才是重點 |
 
 例外：repo 本身就有 formatter（`.prettierrc`、pre-commit hook、CI 檢查），那就跟著它跑——
 這時候「正規化」才是這個 repo 的慣例。動手前先確認：`ls .prettierrc* .editorconfig
@@ -130,8 +130,11 @@ python3 "$SKILL_DIR"/scripts/verify_edit.py old.json new.json
   一行假 diff。
 - **BOM / CRLF**：Windows 產生的設定檔常見。用 `io.open(..., newline="")` 讀寫，
   不要讓 Python 幫你轉換。
-- **非 ASCII**：`ensure_ascii=True` 會把中文變 `中`，`False` 會把 `中` 變中文。
-  兩種都是全檔改動。照 `sniff_format` 報的多數寫法手寫。
+- **非 ASCII**：`ensure_ascii=True` 會把「中」寫成 `\u4e2d`，`ensure_ascii=False` 會把
+  `\u4e2d` 寫回「中」。檔案原本用哪一種寫法，換成另一種就是全檔改動。照 `sniff_format`
+  報的多數寫法手寫。
+  （這份說明本身踩過這個坑：早期版本寫入時 escape 被解讀掉，變成「把中文變成中文」
+  這種看不懂的句子。要在文件裡寫這種序列，寫入前後都要驗一次。）
 - **重複 key**：JSON 允許、`json.loads` 只留最後一個。round-trip 會靜靜刪掉前面的。
   `json_surgery` 遇到同層重複 key 會直接報錯要你手動處理。
 - **數字寫法**：`1.0`、`1e3`、`0.10`、20 位以上的整數——文字層級不動就不會壞。
