@@ -20,8 +20,8 @@ VOCAB = Path(__file__).resolve().parent.parent / "references" / "tag-vocabulary.
 
 REQUIRED = ["date", "date_from", "processed", "title", "source", "mode",
             "tickers", "sectors", "tags", "new_tags"]
-TICKER_RE = re.compile(r"^(TW|TWO|US|JP|KR|HK):([A-Z0-9][A-Z0-9.\-]*|\?)$")
-BODY_TICKER_RE = re.compile(r"\[((?:TW|TWO|US|JP|KR|HK):(?:[A-Z0-9][A-Z0-9.\-]*|\?))\]")
+TICKER_RE = re.compile(r"^(TW|TWO|TWE|US|JP|KR|HK):([A-Z0-9][A-Z0-9.\-]*|\?)$")
+BODY_TICKER_RE = re.compile(r"\[((?:TW|TWO|TWE|US|JP|KR|HK):(?:[A-Z0-9][A-Z0-9.\-]*|\?))\]")
 SECTIONS = ["核心摘要", "產業鏈與概念股", "財務數據", "市場情緒與留言"]
 # 刻意不收的段落：這份檔案只記錄原文，模型自己的分析與延伸閱讀不放進來
 FORBIDDEN = ["深度問答", "延伸搜尋", "延伸參考", "延伸閱讀"]
@@ -188,8 +188,8 @@ def main(argv) -> int:
         if t.get("origin") not in ("原文", "補充"):
             errors.append(f"{code} 的 origin 只能是 原文 或 補充")
         verified = t.get("verified")
-        if verified not in ("listed", "format-only", "not-found"):
-            errors.append(f"{code} 的 verified 只能是 listed / format-only / not-found")
+        if verified not in ("listed", "format-only", "not-found", "delisted"):
+            errors.append(f"{code} 的 verified 只能是 listed / format-only / not-found / delisted")
             continue
         market, num = code.split(":")
         if num == "?":
@@ -200,12 +200,22 @@ def main(argv) -> int:
         if verified == "not-found":
             errors.append(f"{code} 已經寫了代號，verified 卻是 not-found")
             continue
-        if market in ("TW", "TWO", "US") and not data.get(market):
+        if market in ("TW", "TWO", "TWE", "US") and not data.get(market):
             warns.append(f"{market} 清單無法取得，{code} 沒有核對")
+            continue
+        if verified == "delisted":
+            # 已下市的公司寫它原本的代號，但它不能還在現行清單裡
+            if num in index.get(market, {}):
+                errors.append(f"{code} 還在 {market} 清單裡（{index[market][num]['short']}），verified 要寫 listed")
+            elif market == "TW" and data.get("TW-delisted"):
+                if num not in index["TW-delisted"]:
+                    warns.append(f"{code} 不在終止上市清單，請人確認代號")
+            else:
+                warns.append(f"{code}（{name}）已下市，沒有官方清單可核對，請人確認代號")
             continue
         if verified == "format-only":
             # 只有清單本來就不收的才能免核對：日韓港股、台股 ETF（00 開頭）
-            if market in ("TW", "TWO") and not num.startswith("00"):
+            if market in ("TW", "TWO", "TWE") and not num.startswith("00"):
                 errors.append(f"{code} 是台股個股，必須查清單，不能寫 format-only")
             if market == "US":
                 errors.append(f"{code} 是美股，必須查清單，不能寫 format-only")
@@ -216,14 +226,16 @@ def main(argv) -> int:
             continue
         row = index[market].get(num)
         if row is None:
-            other = "TWO" if market == "TW" else "TW" if market == "TWO" else None
-            if other and num in index.get(other, {}):
+            others = [m for m in ("TW", "TWO", "TWE") if m != market] if market in ("TW", "TWO", "TWE") else []
+            other = next((m for m in others if num in index.get(m, {})), None)
+            if other:
                 errors.append(f"{code} 市場寫錯，應為 {other}:{num}（{index[other][num]['short']}）")
             else:
                 errors.append(f"{code} 在 {market} 清單裡找不到")
             continue
-        if market in ("TW", "TWO"):
-            if name != row["short"] and name not in row["name"]:
+        if market in ("TW", "TWO", "TWE"):
+            n = name.replace("臺", "台")
+            if n != row["short"].replace("臺", "台") and n not in row["name"].replace("臺", "台"):
                 errors.append(f"{code} 官方簡稱是「{row['short']}」，跟寫的「{name}」對不上，代號可能錯了")
             if t.get("industry") != row["industry"]:
                 errors.append(f"{code} 的 industry 要照官方填「{row['industry']}」，目前是 {t.get('industry')!r}")

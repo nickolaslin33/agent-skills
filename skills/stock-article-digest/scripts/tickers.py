@@ -2,9 +2,11 @@
 """用官方清單把公司名稱或代號查成標準代號。
 
 資料來源（皆免 API key）：
-  上市  TWSE OpenAPI  t187ap03_L
-  上櫃  TPEx OpenAPI  mopsfin_t187ap03_O
-  美股  SEC           company_tickers.json
+  上市      TWSE OpenAPI  t187ap03_L
+  上櫃      TPEx OpenAPI  mopsfin_t187ap03_O
+  興櫃      TPEx OpenAPI  mopsfin_t187ap03_R
+  終止上市  TWSE OpenAPI  company/suspendListingCsvAndHtml（只有上市的，上櫃下櫃沒有公開清單）
+  美股      SEC           company_tickers.json
 
 清單快取在 $STOCK_DIGEST_CACHE（預設 ~/.cache/stock-article-digest/），
 超過一天自動重抓；抓不到就沿用舊快取並在 warnings 註明。
@@ -26,6 +28,8 @@ from pathlib import Path
 SOURCES = {
     "TW": "https://openapi.twse.com.tw/v1/opendata/t187ap03_L",
     "TWO": "https://www.tpex.org.tw/openapi/v1/mopsfin_t187ap03_O",
+    "TWE": "https://www.tpex.org.tw/openapi/v1/mopsfin_t187ap03_R",
+    "TW-delisted": "https://openapi.twse.com.tw/v1/company/suspendListingCsvAndHtml",
     "US": "https://www.sec.gov/files/company_tickers.json",
 }
 # SEC 要求 User-Agent 帶聯絡方式，沒帶會回 403
@@ -85,7 +89,7 @@ def normalize(market: str, raw) -> list:
                 "name": r["公司名稱"].strip(),
                 "industry": INDUSTRY.get(r["產業別"].strip(), r["產業別"].strip()),
             })
-    elif market == "TWO":
+    elif market in ("TWO", "TWE"):  # 興櫃跟上櫃同一套欄位
         for r in raw:
             rows.append({
                 "code": r["SecuritiesCompanyCode"].strip(),
@@ -93,6 +97,15 @@ def normalize(market: str, raw) -> list:
                 "name": r["CompanyName"].strip(),
                 "industry": INDUSTRY.get(r["SecuritiesIndustryCode"].strip(),
                                          r["SecuritiesIndustryCode"].strip()),
+            })
+    elif market == "TW-delisted":
+        for r in raw:
+            rows.append({
+                "code": r["Code"].strip(),
+                "short": r["Company"].strip(),
+                "name": r["Company"].strip(),
+                "industry": None,
+                "delisted": r["DelistingDate"].strip(),  # 民國年，例如 107/04/30
             })
     else:  # US
         for r in raw.values():
@@ -129,15 +142,19 @@ def load(force: bool = False) -> tuple[dict, list]:
 
 def lookup(query: str, data: dict) -> list:
     """回傳所有可能的對應。精確符合（代號或簡稱）優先，沒有才退到全名包含。"""
-    q = query.strip()
+    # 官方簡稱多半寫「臺」（臺慶科），文章多半寫「台」，比對時當成同一個字
+    q = query.strip().replace("臺", "台")
     qu = q.upper()
     exact, partial = [], []
     for market, rows in data.items():
         for r in rows:
-            hit = {"ticker": f"{market}:{r['code']}", "market": market, **r}
-            if qu == r["code"].upper() or q == r["short"]:
+            # 終止上市的代號照舊寫 TW:，靠 delisted 欄位分辨
+            shown = "TW" if market == "TW-delisted" else market
+            hit = {"ticker": f"{shown}:{r['code']}", "market": shown, **r}
+            short, name = r["short"].replace("臺", "台"), r["name"].replace("臺", "台")
+            if qu == r["code"].upper() or q == short:
                 exact.append(hit)
-            elif len(q) >= 2 and (q in r["name"] or (market == "US" and qu in r["name"].upper())):
+            elif len(q) >= 2 and (q in name or (market == "US" and qu in name.upper())):
                 partial.append(hit)
     return exact or partial[:10]
 
