@@ -14,7 +14,7 @@
 | [eli-adhd-5](skills/eli-adhd-5/SKILL.md) | 寫東西給沒空看的工程師。回報工作時開頭三行講做了什麼、還能不能跑、可能會被反對的決定；寫 README／設計文件／PR 描述時換成這是什麼、現在能不能信、可能會被反對的設計決定。只有指名才觸發 |
 | [my-english-cpr](skills/my-english-cpr/README.md) | 回答完問題之後順便糾正你的英文。夾在中文裡的單字只看選詞，整句英文才完整檢查。加一段 `CLAUDE.md` 才會每次生效，否則是 on-demand |
 | [ask-like-a-pro](skills/ask-like-a-pro/README.md) | 以 PM 角色提需求時，先檢查問法漏了什麼、哪裡講得太模糊，給你一版改寫。缺口大就先停下來問，小缺口提醒完照做 |
-| [stock-article-digest](skills/stock-article-digest/SKILL.md) | 把股市文章的網址或網頁原始碼整理成格式固定的筆記檔。代號用 TWSE、TPEx、SEC 官方清單核對，財務數字只收原文寫的，前面有程式讀得懂的 YAML front matter |
+| [stock-article-digest](skills/stock-article-digest/README.md) | 把股市文章的網址或網頁原始碼整理成格式固定的筆記檔。代號用 TWSE、TPEx、SEC 官方清單核對，財務數字只收原文寫的，前面有程式讀得懂的 YAML front matter |
 
 `eli-adhd-5` 用了 `disable-model-invocation` 這個 Claude Code 擴充欄位來關掉自動觸發。標準相容的 runtime 會忽略它，在別的 agent 上它會變成可自動觸發，靠 `description` 勸退。要上傳到 claude.ai 或用 Skills API 打包時，先手動移掉那一行。其餘 skill 都只用標準欄位。
 
