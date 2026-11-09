@@ -1,0 +1,8 @@
+{
+  "name": "code-reading-page-scripts",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "shiki": "3.23.0"
+  }
+}
