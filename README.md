@@ -16,6 +16,7 @@
 | [ask-like-a-pro](skills/ask-like-a-pro/README.md) | 以 PM 角色提需求時，先檢查問法漏了什麼、哪裡講得太模糊，給你一版改寫。缺口大就先停下來問，小缺口提醒完照做 |
 | [stock-article-digest](skills/stock-article-digest/README.md) | 把股市文章的網址或網頁原始碼整理成格式固定的筆記檔。代號用 TWSE、TPEx、SEC 官方清單核對，財務數字只收原文寫的，前面有程式讀得懂的 YAML front matter |
 | [code-reading-page](skills/code-reading-page/SKILL.md) | 要在 HTML 網頁或文件裡放程式碼時，用 Shiki 排成跟編輯器一樣好讀：依語法上色、關鍵字與函式名加粗、註解與參數用斜體、有行號、字級可調、亮暗主題跟系統切換。可輸出完整頁面或嵌進既有頁面的片段。需要 Node 18 以上 |
+| [lin-workflow](skills/lin-workflow/SKILL.md) | 說「用 LIN 工作流」才觸發。agent 接任務時先理解、查資料再提問，動工前記錄起點，中途的待確認事項先記檢查點繼續做，做完交一張完工卡：改了什麼、你需要看哪裡、它自行決定了什麼、驗過什麼。方向錯了可以退回檢查點。附檢查點腳本，需要 git 與 bash |
 
 `eli-adhd-5` 用了 `disable-model-invocation` 這個 Claude Code 擴充欄位來關掉自動觸發。標準相容的 runtime 會忽略它，在別的 agent 上它會變成可自動觸發，靠 `description` 勸退。要上傳到 claude.ai 或用 Skills API 打包時，先手動移掉那一行。其餘 skill 都只用標準欄位。
 
@@ -36,6 +37,7 @@ npx skills add nickolaslin33/agent-skills@my-english-cpr
 npx skills add nickolaslin33/agent-skills@ask-like-a-pro
 npx skills add nickolaslin33/agent-skills@stock-article-digest
 npx skills add nickolaslin33/agent-skills@code-reading-page
+npx skills add nickolaslin33/agent-skills@lin-workflow
 
 # 更新
 npx skills update
